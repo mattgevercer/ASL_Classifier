@@ -1,0 +1,94 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Jul 16 09:19:40 2021
+
+@author: mattgevercer
+"""
+import matplotlib.pyplot as plt
+import tensorflow as tf
+import pandas as pd
+import random
+import numpy as np
+from sklearn.metrics import confusion_matrix
+import seaborn as sns
+
+train = pd.read_csv('/Users/mattgevercer/Downloads/sign_mnist_train.csv')
+test = pd.read_csv('/Users/mattgevercer/Downloads/sign_mnist_test.csv')
+
+#datasets as numpy arrays
+train_data = np.array(train, dtype='float32')
+test_data = np.array(test, dtype='float32')
+
+#define seperate set of lebels to help with interpretation
+class_names = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P',
+             'Q','R','S','T','U','V','W','X','Y']
+
+#plot random images and their labels
+i = random.randint(1,train.shape[0])
+fig1, ax1 = plt.subplots(figsize=(2,2))
+plt.imshow(train_data[i,1:].reshape((28,28)),cmap='gray')
+print('label: ',class_names[int(train_data[i,0])])
+
+#normalize pixel values
+x_train = train_data[:,1:]/255
+x_test = test_data[:,1:]/255
+
+#convert y values to categorical (needed for categorical crossentropy)
+y_train = train_data[:,0]
+y_train_cat = tf.keras.utils.to_categorical(y_train, num_classes=25)
+
+y_test = test_data[:,0]
+y_test_cat = tf.keras.utils.to_categorical(y_test, num_classes=25)
+
+#reshape x values for neural network
+x_train = x_train.reshape(x_train.shape[0], *(28,28,1))
+x_test = x_test.reshape(x_test.shape[0], *(28,28,1))
+
+#model
+model=tf.keras.models.Sequential([
+    #first convolution
+    tf.keras.layers.Conv2D(64,(3,3), input_shape=(28,28,1), activation='relu'),
+    tf.keras.layers.MaxPooling2D(2,2),
+    #second convolution
+    tf.keras.layers.Conv2D(64,(3,3), activation='relu'),
+    tf.keras.layers.MaxPooling2D(2,2),
+    #third convolution
+    tf.keras.layers.Conv2D(128,(3,3), activation='relu'),
+    tf.keras.layers.MaxPooling2D(2,2),
+    #flatten the results into a DNN
+    tf.keras.layers.Flatten(),
+    tf.keras.layers.Dropout(0.5),
+    # 512 neuron hidden layer
+    tf.keras.layers.Dense(512, activation='relu'),
+    tf.keras.layers.Dense(25, activation='softmax')
+    ])
+
+#compile model
+model.compile(loss='categorical_crossentropy',optimizer='rmsprop',
+              metrics=['accuracy'])
+history=model.fit(x_train,y_train_cat, batch_size=128, epochs=10,
+                  validation_data=(x_test, y_test_cat))
+#plot the training and validation accuracy at each epoch
+acc     = history.history[    'accuracy' ]
+val_acc = history.history['val_accuracy' ]
+epochs   = range(len(acc))
+plt.plot  ( epochs, acc, label='Training Accuracy' )
+plt.plot  ( epochs, val_acc, Label='Validation Accuracy' )
+plt.title ('Training and Validation Accuracy Over Epochs')
+plt.legend(loc="lower right")
+
+#Print confusion matrix
+prediction = model.predict_classes(x_test)
+cm = confusion_matrix(y_test, prediction)
+fig, ax = plt.subplots(figsize=(12,12))
+sns.set(font_scale=1.6)
+sns.heatmap(cm, annot=True, linewidths=.5, ax=ax)
+
+#Plot fraction of incorrect misclassifications
+incorr_fraction = 1 - np.diag(cm) / np.sum(cm, axis=1)
+fig, ax = plt.subplots(figsize=(12,12))
+plt.bar(np.arange(24), incorr_fraction)
+plt.xlabel('Labels')
+plt.ylabel('Fraction of incorrect predictions')
+plt.xticks(range(0,25),labels=class_names)
