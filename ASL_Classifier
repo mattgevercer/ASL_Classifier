@@ -74,7 +74,7 @@ acc     = history.history[    'accuracy' ]
 val_acc = history.history['val_accuracy' ]
 epochs   = range(len(acc))
 plt.plot  ( epochs, acc, label='Training Accuracy' )
-plt.plot  ( epochs, val_acc, Label='Validation Accuracy' )
+plt.plot  ( epochs, val_acc, label='Validation Accuracy' )
 plt.title ('Training and Validation Accuracy Over Epochs')
 plt.legend(loc="lower right")
 
@@ -90,5 +90,5 @@ incorr_fraction = 1 - np.diag(cm) / np.sum(cm, axis=1)
 fig, ax = plt.subplots(figsize=(12,12))
 plt.bar(np.arange(24), incorr_fraction)
 plt.xlabel('Labels')
-plt.ylabel('Fraction of incorrect predictions')
+plt.ylabel('Fraction of Incorrect Predictions')
 plt.xticks(range(0,25),labels=class_names)
